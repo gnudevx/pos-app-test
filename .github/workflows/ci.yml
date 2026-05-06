@@ -104,7 +104,8 @@ jobs:
           npm install -g vercel -q
           vercel deploy frontend/ --token=${{ secrets.VERCEL_TOKEN }} --yes
       - name: Deploy backend (Railway/Render)
-        run: echo "TODO: add Railway/Render deploy step"
+        run: |
+          echo "TODO: add Railway/Render deploy step"
 
   e2e:
     name: E2E — Playwright
