@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes import products, cart   
 
 app = FastAPI(title="POS API", version="1.0.0")
 
@@ -10,6 +11,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(products.router)            # ✅ thêm
+app.include_router(cart.router)                # ✅ thêm
 
 @app.get("/health")
 def health():

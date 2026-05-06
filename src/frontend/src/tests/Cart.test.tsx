@@ -10,10 +10,13 @@ test("renders empty cart message", () => {
   expect(screen.getByText("Cart is empty")).toBeTruthy();
 });
 
+
 test("renders cart items and total", () => {
   render(
     <Cart items={mockItems} total={30000} onCheckout={() => {}} onClear={() => {}} />
   );
   expect(screen.getByText("Coca Cola")).toBeTruthy();
-  expect(screen.getByText(/30,000/)).toBeTruthy();
+  // ✅ Fix: dùng getAllByText thay vì getByText vì có nhiều element chứa 30,000
+  const elements = screen.getAllByText(/30,000/);
+  expect(elements.length).toBeGreaterThan(0);
 });
