@@ -22,9 +22,7 @@ export async function addToCart(item: {
 }
 
 export async function checkout() {
-  const res = await fetch(`${BASE_URL}/cart/checkout`, {
-    method: "POST",
-  });
+  const res = await fetch(`${BASE_URL}/cart/checkout`, { method: "POST" });
   if (!res.ok) throw new Error("Checkout failed");
   return res.json();
 }

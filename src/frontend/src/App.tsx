@@ -16,21 +16,14 @@ export default function App() {
   }, []);
 
   function refreshCart() {
-    getCart()
-      .then((data) => {
-        setCartItems(data.items);
-        setTotal(data.total);
-      })
-      .catch(console.error);
+    getCart().then((data) => {
+      setCartItems(data.items);
+      setTotal(data.total);
+    }).catch(console.error);
   }
 
   async function handleAddToCart(product: Product) {
-    await addToCart({
-      product_id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-    });
+    await addToCart({ product_id: product.id, name: product.name, price: product.price, quantity: 1 });
     refreshCart();
   }
 
@@ -59,12 +52,7 @@ export default function App() {
           </div>
         </section>
         <aside>
-          <Cart
-            items={cartItems}
-            total={total}
-            onCheckout={handleCheckout}
-            onClear={handleClear}
-          />
+          <Cart items={cartItems} total={total} onCheckout={handleCheckout} onClear={handleClear} />
           {receipt && (
             <div className="receipt">
               <h3>Receipt</h3>

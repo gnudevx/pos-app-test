@@ -16,27 +16,21 @@ def test_create_and_get_product():
     })
     assert r.status_code == 200
     pid = r.json()["id"]
-
     r2 = client.get(f"/products/{pid}")
     assert r2.status_code == 200
     assert r2.json()["name"] == "Coca Cola"
 
 
 def test_cart_flow():
-    # Add product first
     r = client.post("/products/", json={
         "name": "Pepsi", "price": 12000, "stock": 50
     })
     pid = r.json()["id"]
-
-    # Add to cart
     r2 = client.post("/cart/add", json={
         "product_id": pid, "name": "Pepsi",
         "price": 12000, "quantity": 2
     })
     assert r2.status_code == 200
-
-    # Checkout
     r3 = client.post("/cart/checkout")
     assert r3.status_code == 200
     assert r3.json()["receipt"]["total"] == 24000
