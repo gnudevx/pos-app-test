@@ -170,8 +170,9 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Backend deploy placeholder
-        run: echo "TODO - add Railway token and deploy step"
+      - name: Deploy backend (Railway/Render)
+        run: |
+          echo "TODO: add Railway/Render deploy step"
 
   e2e:
     name: E2E - Playwright
