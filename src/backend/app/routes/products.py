@@ -4,7 +4,6 @@ from typing import List
 
 router = APIRouter(prefix="/products", tags=["products"])
 
-# In-memory store for demo
 _db: dict[int, dict] = {}
 _next_id = 1
 

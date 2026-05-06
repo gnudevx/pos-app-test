@@ -16,12 +16,10 @@ export default function App() {
   }, []);
 
   function refreshCart() {
-    getCart()
-      .then((data) => {
-        setCartItems(data.items);
-        setTotal(data.total);
-      })
-      .catch(console.error);
+    getCart().then((data) => {
+      setCartItems(data.items as CartItem[]);
+      setTotal(data.total as number);
+    }).catch(console.error);
   }
 
   async function handleAddToCart(product: Product) {
@@ -36,7 +34,7 @@ export default function App() {
 
   async function handleCheckout() {
     const result = await checkout();
-    setReceipt(result.receipt);
+    setReceipt(result.receipt as object);
     setCartItems([]);
     setTotal(0);
   }
