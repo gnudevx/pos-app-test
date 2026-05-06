@@ -2,17 +2,14 @@ name: POS App CI/CD
 
 on:
   push:
-    branches:
-      - "main"
-      - "feature/**"
+    branches: ["main", "feature/**"]
   pull_request:
-    branches:
-      - "main"
+    branches: ["main"]
 
 jobs:
 
   backend-test:
-    name: Backend - Pytest
+    name: Backend — Pytest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,15 +21,15 @@ jobs:
       - name: Check backend exists
         id: check
         run: |
-          if [ -f "src/backend/requirements.txt" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+          [ -f "src/backend/requirements.txt" ] \
+            && echo "exists=true" >> $GITHUB_OUTPUT \
+            || echo "exists=false" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
         if: steps.check.outputs.exists == 'true'
-        run: cd src/backend && pip install -r requirements.txt -q
+        run: |
+          cd src/backend
+          pip install -r requirements.txt -q
 
       - name: Run pytest
         if: steps.check.outputs.exists == 'true'
@@ -41,7 +38,7 @@ jobs:
           PYTHONPATH=$(pwd) python -m pytest tests/ -v --tb=short
 
   frontend-test:
-    name: Frontend - Jest and Build
+    name: Frontend — Jest + Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,11 +50,9 @@ jobs:
       - name: Check frontend exists
         id: check
         run: |
-          if [ -f "src/frontend/package.json" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+          [ -f "src/frontend/package.json" ] \
+            && echo "exists=true" >> $GITHUB_OUTPUT \
+            || echo "exists=false" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
         if: steps.check.outputs.exists == 'true'
@@ -80,7 +75,7 @@ jobs:
           retention-days: 1
 
   lint:
-    name: Lint - Flake8 and ESLint
+    name: Lint — Flake8 + ESLint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -93,60 +88,54 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Flake8
+      - name: Flake8 (backend)
         run: |
           pip install flake8 -q
           if [ -d "src/backend/app" ]; then
             flake8 src/backend/app --max-line-length=120
             echo "Flake8 passed"
           else
-            echo "No backend code yet - skip"
+            echo "No backend code yet — skip"
           fi
 
-      - name: ESLint
+      - name: ESLint (frontend)
         run: |
           if [ -f "src/frontend/package.json" ]; then
             cd src/frontend && npm ci --silent
             npx eslint src --max-warnings 0
+            echo "ESLint passed"
           else
-            echo "No frontend code yet - skip"
+            echo "No frontend code yet — skip"
           fi
 
   docker-build:
-    name: Docker - Build and Verify
+    name: Docker — Build and Verify
     runs-on: ubuntu-latest
-    needs:
-      - backend-test
-      - frontend-test
+    needs: [backend-test, frontend-test]
     steps:
       - uses: actions/checkout@v4
 
       - name: Check Dockerfile exists
         id: check
         run: |
-          if [ -f "src/backend/Dockerfile" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+          [ -f "src/backend/Dockerfile" ] \
+            && echo "exists=true" >> $GITHUB_OUTPUT \
+            || echo "exists=false" >> $GITHUB_OUTPUT
 
       - name: Build backend image
         if: steps.check.outputs.exists == 'true'
         run: docker build -t pos-backend:ci src/backend
 
-      - name: Smoke test
+      - name: Smoke test — container starts
         if: steps.check.outputs.exists == 'true'
         run: |
           docker run --rm pos-backend:ci \
             python -c "from app.main import app; print('Backend import OK')"
 
   deploy-staging:
-    name: Deploy - Staging
+    name: Deploy — Staging (Vercel)
     runs-on: ubuntu-latest
-    needs:
-      - backend-test
-      - frontend-test
-      - docker-build
+    needs: [backend-test, frontend-test, docker-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
@@ -159,38 +148,37 @@ jobs:
         continue-on-error: true
 
       - name: Deploy frontend to Vercel
-        run: |
-          if [ -n "$VERCEL_TOKEN" ]; then
-            npm install -g vercel -q
-            vercel deploy src/frontend/dist --token="$VERCEL_TOKEN" --yes
-            echo "Deployed to Vercel"
-          else
-            echo "VERCEL_TOKEN not set - skip deploy"
-          fi
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy backend (Railway/Render)
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}   # ← truyền qua env
         run: |
-          echo "TODO: add Railway/Render deploy step"
+          if [ -z "$VERCEL_TOKEN" ]; then             # ← kiểm tra trong shell
+            echo "VERCEL_TOKEN not set — skip deploy"
+            exit 0
+          fi
+          npm install -g vercel -q
+          vercel deploy src/frontend/dist \
+            --token="$VERCEL_TOKEN" \
+            --yes
+
+      - name: Backend deploy placeholder
+        run: |
+          echo "TODO: Railway/Render deploy"
+          echo "Add RAILWAY_TOKEN secret + railway CLI when ready"
 
   e2e:
-    name: E2E - Playwright
+    name: E2E — Playwright
     runs-on: ubuntu-latest
-    needs:
-      - deploy-staging
+    needs: deploy-staging
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check e2e exists
+      - name: Check e2e folder exists
         id: check
         run: |
-          if [ -d "e2e" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+          [ -d "e2e" ] \
+            && echo "exists=true" >> $GITHUB_OUTPUT \
+            || echo "exists=false" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         if: steps.check.outputs.exists == 'true'
@@ -198,11 +186,14 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install and run Playwright
+      - name: Install Playwright
         if: steps.check.outputs.exists == 'true'
         run: |
           cd e2e && npm ci
           npx playwright install --with-deps chromium
-          npx playwright test
+
+      - name: Run E2E tests
+        if: steps.check.outputs.exists == 'true'
+        run: cd e2e && npx playwright test
         env:
           BASE_URL: ${{ secrets.STAGING_URL }}
